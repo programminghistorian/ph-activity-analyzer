@@ -1,0 +1,39 @@
+name: update_ph_issue_analyzer_datasets
+
+on:
+  pull_request:
+    types: [ trigger-update-ph-issue-analyzer-dataset ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: execute py script # run the run.py to get the latest data
+        run: |
+          python get_github_data.py
+        env:
+          AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }} # if run.py requires passwords..etc, set it as secrets
+      - name: Commit files
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git commit -m "Updating dataset" --allow-empty
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
